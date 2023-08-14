@@ -12,7 +12,7 @@ const Screen = ({
   label: string;
 }) => {
   return (
-    <SafeAreaView className="px-6 p-3 flex-1 bg-[#fafafa]">
+    <SafeAreaView className="px-6 py-3 flex-1 bg-[#fafafa]">
       <View className="justify-between flex-row gap-3 items-center ">
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft2 className="text-neutral-800" size={24} />

@@ -1,3 +1,5 @@
+import WebSocketManager from "@/socket/Socket";
+import { WebSocketProvider } from "@/socket/SocketContext";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
   DarkTheme,
@@ -48,13 +50,22 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const webSocketManager = new WebSocketManager();
 
+  webSocketManager.connect("ws://localhost:8000");
+  useEffect(() => {
+    webSocketManager
+      .getSocket()
+      ?.emit("registerClient", { name: "John Barnes", id: 1 });
+  }, []);
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-      </Stack>
-    </ThemeProvider>
+    <WebSocketProvider webSocketManager={webSocketManager}>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        </Stack>
+      </ThemeProvider>
+    </WebSocketProvider>
   );
 }

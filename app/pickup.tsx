@@ -1,11 +1,107 @@
-import { View, Text, TouchableOpacity } from "react-native";
-import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+} from "react-native";
+import React, { ComponentType, useState } from "react";
 import Screen from "@/components/Screen";
-import { Box, Location } from "iconsax-react-native";
+import { ArrowRight, Box, Location, Personalcard } from "iconsax-react-native";
 import { TextInput } from "react-native-gesture-handler";
-import { router } from "expo-router";
+import { useNavigation } from "expo-router";
+import { getDistance } from "@/utils/getDistance";
+import {
+  GooglePlaceData,
+  GooglePlaceDetail,
+} from "react-native-google-places-autocomplete";
+import GooglePlacesInput from "@/components/App/Home/Location/Selector";
+import axios from "axios";
 
 const Pickup = () => {
+  const [step, setStep] = useState(0);
+  const [details, setDetails] = useState<{
+    pickup: {
+      latLng: string;
+      name: string;
+    };
+    drop: {
+      latLng: string;
+      name: string;
+    };
+    receiver: {
+      name: string;
+      phone: string;
+    };
+  }>({
+    pickup: {
+      latLng: "",
+      name: "",
+    },
+    drop: {
+      latLng: "",
+      name: "",
+    },
+    receiver: {
+      name: "",
+      phone: "",
+    },
+  });
+  const [loading, setLoading] = useState(false);
+  const [res, setRes] = useState({
+    distance: "",
+    duration: "",
+    start: "",
+    end: "",
+    cost: 0,
+  });
+  const navigator = useNavigation();
+  const handleCalc = async () => {
+    try {
+      setLoading(true);
+      const data = await getDistance(
+        details.pickup.latLng,
+        details.drop.latLng
+      );
+
+      //@ts-ignore
+      data && setRes(data);
+
+      setStep((step) => step + 1);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.post("http://localhost:8000/api/packages/", {
+        senderName: "John Barnes",
+        senderPhone: "0543288549",
+        pickup: { name: details.pickup.name, latLng: details.pickup.latLng },
+        dropoff: { name: details.drop.name, latLng: details.drop.latLng },
+        receiverName: details.receiver.name,
+        receiverPhone: details.receiver.phone,
+      });
+
+      const res = await getDistance(details.pickup.latLng, details.drop.latLng);
+
+      //@ts-ignore
+      navigator.navigate("package", {
+        id: data._id,
+        data: res,
+        details,
+      });
+    } catch (error) {
+      //@ts-ignore
+      console.log(error.response.data);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Screen label="Pick up">
       <View className="py-6">
@@ -16,33 +112,136 @@ const Pickup = () => {
           Enter your delivery details to get your package delivered
         </Text>
       </View>
-      <View className="bg-white px-4 py-8 rounded-[20px]">
-        <View className="flex-row gap-3 items-center">
-          <View className="h-10 w-10 border border-gray-300 items-center justify-center bg-gray-100 rounded-full">
+      {step < 2 && (
+        <View className="bg-white flex-1 border border-gray-100 px-4 py-8 max-h-[40vh] rounded-[20px]">
+          {step === 0 && (
+            <GooglePlacesInput
+              onSelect={(
+                data: GooglePlaceData,
+                details: GooglePlaceDetail | null
+              ) => {
+                details &&
+                  setDetails((prev) => ({
+                    ...prev,
+                    pickup: {
+                      id: data.id,
+                      name: details.name,
+                      latLng: `${details.geometry.location.lat},${details.geometry.location.lng}`,
+                    },
+                  }));
+              }}
+              label="Pickup - Point"
+              left={
+                (
+                  <View className="h-10 w-10 items-center justify-center bg-gray-100 rounded-full">
+                    <Box color="black" />
+                  </View>
+                ) as unknown as ComponentType<{}>
+              }
+            />
+          )}
+          {/* <View className="flex-row gap-3 items-center">
+          <View className="h-10 w-10 items-center justify-center bg-gray-100 rounded-full">
             <Box color="black" />
           </View>
           <View className="flex-1 gap-y-3 -top-5">
             <Text className="text-gray-500">Pickup - Point</Text>
             <TextInput className="py-4  rounded-2xl px-3 bg-gray-100 w-full" />
           </View>
+        </View> */}
+          {step === 1 && (
+            <GooglePlacesInput
+              label="Dropoff - Point"
+              onSelect={(
+                data: GooglePlaceData,
+                details: GooglePlaceDetail | null
+              ) =>
+                details &&
+                setDetails((prev) => ({
+                  ...prev,
+                  drop: {
+                    id: data.id,
+                    name: details.name,
+                    latLng: `${details.geometry.location.lat},${details.geometry.location.lng}`,
+                  },
+                }))
+              }
+              left={
+                (
+                  <View className="h-10 w-10 items-center justify-center bg-gray-100 rounded-full">
+                    <Location color="black" />
+                  </View>
+                ) as unknown as ComponentType<{}>
+              }
+            />
+          )}
         </View>
-        <View className="h-[100px] w-[1px] absolute left-9 top-[45%] z-[-1]  border border-gray-300  border-dashed"></View>
-        <View className="flex-row gap-3 items-center">
-          <View className="h-10 w-10 border-gray-300 items-center justify-center bg-gray-100 rounded-full">
-            <Location color="black" />
-          </View>
-          <View className="flex-1 gap-y-3 -top-5">
-            <Text className="text-gray-500">Drop Off - Point</Text>
-            <TextInput className="py-4  rounded-2xl px-3 bg-gray-100 w-full" />
-          </View>
+      )}
+      {step === 2 && (
+        <View>
+          <Text>Distance is {res.distance}</Text>
+          <Text>Duration is {res.duration}</Text>
+          <Text>Cost is {res.cost}</Text>
         </View>
-      </View>
-      <TouchableOpacity
-        onPress={() => router.push("/package")}
-        className="bg-[#4641A7] rounded-2xl absolute w-full left-4 bottom-8 py-3 items-center"
-      >
-        <Text className="text-lg text-white">Get Courier</Text>
-      </TouchableOpacity>
+      )}
+      {step === 3 && (
+        <KeyboardAvoidingView>
+          <View className="flex-row items-center gap-3">
+            <Personalcard color="black" />
+            <Text className="text-xl font-bold">Receiver Details</Text>
+          </View>
+          <View className="my-2">
+            <Text>Name</Text>
+            <TextInput
+              onChangeText={(text) =>
+                setDetails((details) => ({
+                  ...details,
+                  receiver: { ...details.receiver, name: text },
+                }))
+              }
+              className="py-3 px-3 rounded-full  bg-white my-2"
+              placeholder="Receiver Name"
+            />
+          </View>
+          <View className="my-2">
+            <Text>Phone</Text>
+            <TextInput
+              onChangeText={(text) =>
+                setDetails((details) => ({
+                  ...details,
+                  receiver: { ...details.receiver, phone: text },
+                }))
+              }
+              className="py-3 px-3 bg-white my-2 rounded-full"
+              placeholder="Phone"
+              keyboardType="phone-pad"
+            />
+          </View>
+        </KeyboardAvoidingView>
+      )}
+      {step === 3 && (
+        <TouchableOpacity
+          className="bg-[#4641A7] rounded-2xl absolute w-full left-4 bottom-8 py-3 items-center"
+          onPress={handleSubmit}
+        >
+          {!loading ? (
+            <Text className="text-lg text-white">Get Courier</Text>
+          ) : (
+            <ActivityIndicator />
+          )}
+        </TouchableOpacity>
+      )}
+      {step < 3 && (
+        <TouchableOpacity
+          className="flex-row items-center justify-end mt-9 ml-auto gap-x-3"
+          onPress={() =>
+            step === 1 ? handleCalc() : setStep((step) => step + 1)
+          }
+        >
+          <Text>Next</Text>
+          <ArrowRight />
+        </TouchableOpacity>
+      )}
     </Screen>
   );
 };

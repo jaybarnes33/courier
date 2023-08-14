@@ -1,11 +1,15 @@
 import Location from "@/components/App/Home/Location";
 import Tracking from "@/components/App/Home/Tracking";
+import { useWebSocket } from "@/socket/SocketContext";
+import { testWebSocketManager } from "@/socket/test";
 import { useRouter } from "expo-router";
+import { useEffect } from "react";
 
 import { View, SafeAreaView, Image, Text, Pressable } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 
-export default function TabOneScreen() {
+export default function Home() {
+  const { webSocketManager } = useWebSocket();
   const router = useRouter();
   const qa = [
     {
@@ -17,6 +21,7 @@ export default function TabOneScreen() {
       image: require("@/assets/images/delivery.png"),
     },
   ];
+
   return (
     <View className="bg-[#fafafa] flex-1">
       <View className="bg-[#4641a7] pt-6 relative h-[85%] rounded-b-[40px]">
@@ -30,12 +35,14 @@ export default function TabOneScreen() {
           </View>
           <Tracking />
         </SafeAreaView>
+
         <View className="mt-10 px-6 flex-row gap-x-3 justify-around">
           {qa.map((item) => (
             <Pressable
               onPress={() =>
                 router.push(item.name.includes("Rates") ? "/rates" : "/pickup")
               }
+              key={item.name}
               className="min-w-[145px] h-40  rounded-3xl shadow  bg-white items-center justify-center py-4"
             >
               <Image className="w-16" source={item.image} />

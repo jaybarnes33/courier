@@ -29,7 +29,7 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
 
   return (
     <View className="bg-[#fafafa] px-4">
-      <View className="flex-row h-16 items-center shadow-md">
+      <View className="flex-row h-16 items-center">
         {state.routes.slice(0, 2).map((route, index) => {
           const { options } = descriptors[route.key];
           const label =

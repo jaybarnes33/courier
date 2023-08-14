@@ -7,7 +7,10 @@ import { router } from "expo-router";
 const Location = () => {
   return (
     <View className="flex-row items-center relative z-[99] ">
-      <TouchableOpacity className="w-12 h-12 rounded-full bg-[#ffffff1f] justify-center items-center">
+      <TouchableOpacity
+        onPress={() => router.push("/profile")}
+        className="w-12 h-12 rounded-full bg-[#ffffff1f] justify-center items-center"
+      >
         <Profile color="white" size={24} />
       </TouchableOpacity>
       <View className="flex-1 items-center ">
