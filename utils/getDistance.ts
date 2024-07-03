@@ -1,5 +1,32 @@
 import axios from "axios";
 
+export const getPath = async (start: string, end: string) => {
+  const apiKey = "AIzaSyDBip8f6XGvMW1vgn8p1ThCPeVqKyjfLOE";
+
+  const mode = "driving"; // Travel mode: driving, walking, transit, bicycling
+
+  const cords = `https://maps.googleapis.com/maps/api/directions/json?origin=${start}&destination=${end}&mode=${mode}&key=${apiKey}`;
+
+  const { data: coords } = await axios.get(cords);
+
+  try {
+    const routes = coords.routes;
+    if (routes && routes.length) {
+      const route = routes[0];
+      const polylinePoints = route.overview_polyline.points;
+
+      // Decode the polyline to get an array of latitude and longitude coordinates
+      const decodedCoordinates = decodePolyline(polylinePoints);
+      // You can now use the distance and duration values for further processing.
+      return {
+        coordinates: decodedCoordinates,
+      };
+    }
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};
+
 export const getDistance = async (start: string, end: string) => {
   const apiKey = "AIzaSyDBip8f6XGvMW1vgn8p1ThCPeVqKyjfLOE";
 

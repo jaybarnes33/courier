@@ -1,13 +1,11 @@
 import { View } from "@/components/Themed";
-import React, { Component, ComponentType, ReactNode } from "react";
+import React, { ComponentType, ReactNode } from "react";
 import { Text, TextInput } from "react-native";
 import {
   GooglePlaceData,
   GooglePlaceDetail,
   GooglePlacesAutocomplete,
 } from "react-native-google-places-autocomplete";
-import { Input } from "react-native-elements";
-import { Box } from "iconsax-react-native";
 const GooglePlacesInput = ({
   label,
   onSelect,

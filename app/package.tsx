@@ -9,6 +9,7 @@ import { useRoute } from "@react-navigation/native";
 import PulsingText from "@/components/App/Home/RiderLoading";
 import { useWebSocket } from "@/socket/SocketContext";
 import { Package as PackageType, Rider } from "@/types/app";
+import { getPath } from "@/utils/getDistance";
 
 const Package = () => {
   const route = useRoute();
@@ -16,22 +17,65 @@ const Package = () => {
   const { webSocketManager } = useWebSocket();
   const [rider, setRider] = useState<Rider | null>();
   const [accepted, setAccepted] = useState(false);
-  useEffect(() => {
-    webSocketManager
-      .getSocket()
-      ?.on("packagedAccepted", (data: PackageType) => {
-        console.log(data.assignedTo);
-        setRider(data.assignedTo);
-      });
-  }, []);
+  const [polyline, setPolyline] = useState<LatLng[]>([]);
   const {
     //@ts-ignore
     details: { pickup, drop },
     //@ts-ignore
     data: { coordinates },
   } = route.params;
+  useEffect(() => {
+    webSocketManager
+      .getSocket()
+      ?.on("packagedAccepted", (data: PackageType) => {
+        console.log(data.assignedTo);
+        setRider(data.assignedTo);
+        webSocketManager.getSocket()?.emit("path", coordinates);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (rider) {
+      (async () => {
+        const path = await getPath(
+          `${rider.location.coordinates[0]},${rider.location.coordinates[1]}`,
+          `${pickup.latLng.latitude},${pickup.latLng.longitude}`
+        );
+        console.log({ path });
+        path && setPolyline(path?.coordinates);
+      })();
+    }
+  }, [rider]);
+
+  const [coords, setCoords] = useState<LatLng[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  useEffect(() => {
+    setCoords([...polyline, ...coordinates]);
+    const interval = setInterval(() => {
+      console.log(coords);
+      if (currentIndex < coords.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+        setRiderLocation(coords[currentIndex + 1]);
+      } else {
+        clearInterval(interval);
+      }
+    }, 1000); // Adjust the interval duration (in milliseconds)
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [currentIndex, polyline, polyline]);
   const mapRef = useRef<MapView | null>(null);
   // Function to set the map's zoom and position to fit between the two points
+
+  const [riderLocation, setRiderLocation] = useState<LatLng | null>();
+  useEffect(() => {
+    rider &&
+      setRiderLocation({
+        latitude: Number(rider.location.coordinates[0]),
+        longitude: Number(rider.location.coordinates[1]),
+      });
+  }, [rider]);
   const fitMapBetweenCoordinates = () => {
     if (mapRef.current) {
       const latitudes = coordinates.map((coord: LatLng) => coord.latitude);
@@ -91,8 +135,11 @@ const Package = () => {
             }}
             title={drop.name}
           />
-
+          {rider && riderLocation && (
+            <Marker title={rider.name} coordinate={riderLocation} />
+          )}
           <Polyline coordinates={coordinates} fillColor="#6965b9" />
+          <Polyline coordinates={polyline} fillColor="#6965b9" />
         </MapView>
       </View>
       <View className="bg-[#4641A7] px-4 py-8 rounded-[20px] mt-6">
