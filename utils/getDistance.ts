@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const getPath = async (start: string, end: string) => {
-  const apiKey = "AIzaSyDBip8f6XGvMW1vgn8p1ThCPeVqKyjfLOE";
+  const apiKey = process.env.EXPO_PUBLIC_MAPS_KEY;
 
   const mode = "driving"; // Travel mode: driving, walking, transit, bicycling
 
@@ -28,7 +28,7 @@ export const getPath = async (start: string, end: string) => {
 };
 
 export const getDistance = async (start: string, end: string) => {
-  const apiKey = "AIzaSyDBip8f6XGvMW1vgn8p1ThCPeVqKyjfLOE";
+  const apiKey = process.env.EXPO_PUBLIC_MAPS_KEY;
 
   const mode = "driving"; // Travel mode: driving, walking, transit, bicycling
 
